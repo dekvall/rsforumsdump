@@ -126,7 +126,7 @@ def main():
         "thread",
         action="store",
         type=rsforums_thread,
-        help="the forums url or qfc to parse",
+        help="the forums url or qfc to dump",
     )
     parser.add_argument(
         "-q", "--quiet", dest="quiet", action="store_true", help="do not display output"
