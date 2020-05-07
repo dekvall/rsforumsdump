@@ -17,6 +17,7 @@ import requests
 import grequests
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+from dataclasses import dataclass
 
 FORUMS_URL_PATTERN = re.compile(
     r"^(https://secure\.runescape\.com/m=forum/forums\?\d{2,3},\d{2,3},\d{3},\d{8})(?:,goto,\d+)?$"
@@ -26,13 +27,11 @@ LAST_EDIT_PATTERN = re.compile(r"^- Last edited on (.+) by .+$")
 POSTS_PER_PAGE = 10
 
 
-class FeedbackCounter:
-    """Object to provide a feedback callback keeping track of total calls."""
-
-    def __init__(self, total, quiet):
-        self.counter = 0
-        self.total = total
-        self.quiet = quiet
+@dataclass
+class FetchCounter:
+    total: int
+    quiet: bool
+    counter: int = 0
 
     def feedback(self, r, **kwargs):
         self.counter += 1
@@ -173,7 +172,7 @@ def main():
 
     urls = [f"{args['thread']},goto,{pagenum}" for pagenum in range(1, n_pages + 1)]
 
-    fbc = FeedbackCounter(n_pages, args["quiet"])
+    fetch_counter = FetchCounter(n_pages, args["quiet"])
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0",
     }
@@ -188,7 +187,7 @@ def main():
     s.mount("http://", HTTPAdapter(max_retries=retries))
     s.mount("https://", HTTPAdapter(max_retries=retries))
     rs = (
-        grequests.get(u, headers=headers, callback=fbc.feedback, session=s)
+        grequests.get(u, headers=headers, callback=fetch_counter.feedback, session=s)
         for u in urls
     )
 
