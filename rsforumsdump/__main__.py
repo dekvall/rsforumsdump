@@ -162,9 +162,11 @@ def main():
     if not_found:
         raise ValueError(f'The thread {args["thread"]} cannot be found')
 
-    n_pages = int(
-        soup.find("input", {"class": "forum-pagination__input-number"})["max"]
-    )
+    page_select = soup.find("input", {"class": "forum-pagination__input-number"})
+    n_pages = 1
+
+    if page_select is not None:
+        n_pages = int(page_select["max"])
 
     if not args["quiet"]:
         print(f"Found thread with {n_pages} pages", file=sys.stderr)
