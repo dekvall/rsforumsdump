@@ -10,7 +10,7 @@ pip install .
 ```
 
 ## Usage
-```bash
+```
 $rsforumsdump --help
 usage: rsforumsdump [-h] [-q] [-o OUTFILE] [-w WORKERS] [-i INDENT] thread
 
@@ -27,7 +27,7 @@ optional arguments:
   -w WORKERS, --workers WORKERS
                         set the amount of workers to fetch webpages
   -i INDENT, --indent INDENT
-                        set then indentation of the json output
+                        set the indentation of the json output
 ```
 
 ## Output

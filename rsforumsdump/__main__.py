@@ -154,7 +154,7 @@ def main():
         dest="indent",
         type=int,
         default=None,
-        help="set then indentation of the json output",
+        help="set the indentation of the json output",
     )
 
     args = vars(parser.parse_args())
