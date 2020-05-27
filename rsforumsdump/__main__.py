@@ -147,6 +147,15 @@ def main():
         default=4,
         help="set the amount of workers to fetch webpages",
     )
+    parser.add_argument(
+        "-i",
+        "--indent",
+        action="store",
+        dest="indent",
+        type=int,
+        default=None,
+        help="set then indentation of the json output",
+    )
 
     args = vars(parser.parse_args())
 
@@ -226,10 +235,10 @@ def main():
 
     outfile = args["outfile"]
     if outfile is None:
-        print(json.dumps(info))
+        print(json.dumps(info, indent=args["indent"]))
     else:
         with open(outfile, "w") as out:
-            json.dump(info, out)
+            json.dump(info, out, indent=args["indent"])
 
 
 if __name__ == "__main__":
