@@ -81,13 +81,16 @@ def extract_post_message(post):
             br.replace_with("\n")
     # Remove trailing whitespace
     content = message.get_text()
-    return "\n".join((line.strip() for line in content.split("\n")))
+    clean_content = "\n".join((line.strip() for line in content.split("\n")))
+    # When you quote a message Jagex encodes nbsp in names as \u00a0 instead of the normal %A0
+    return clean_content.replace("\u00a0", " ")
 
 
 def extract_poster(post):
     name = post.find("h3", {"class": "post-avatar__name"})
     if name is not None:
-        return name["data-displayname"]
+        # Jagex uses &nbsp for player names
+        return name["data-displayname"].replace("%A0", " ")
     return None
 
 
@@ -159,7 +162,11 @@ def main():
 
     args = vars(parser.parse_args())
 
-    response = requests.get(args["thread"])
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0",
+    }
+
+    response = requests.get(args["thread"], headers=headers)
 
     if response.status_code != 200:
         response.raise_for_status()
@@ -167,6 +174,11 @@ def main():
     soup = BeautifulSoup(response.content, "html.parser")
 
     not_found = soup.find("p", {"class": "forum-error"})
+
+    incapsula_limited = soup.find("iframe")
+
+    if incapsula_limited:
+        raise ValueError(f'You are being limited by incapsula')
 
     if not_found:
         raise ValueError(f'The thread {args["thread"]} cannot be found')
@@ -177,16 +189,17 @@ def main():
     if page_select is not None:
         n_pages = int(page_select["max"])
 
+    thread_title = soup.find("h2", {"class": "thread-view__heading"})
+
+    if thread_title is not None:
+        thread_title = thread_title.get_text()
     if not args["quiet"]:
-        print(f"Found thread with {n_pages} pages", file=sys.stderr)
+        print(f"Found thread with {n_pages} page(s) and topic \"{thread_title}\"", file=sys.stderr)
         start = time.time()
 
     urls = [f"{args['thread']},goto,{pagenum}" for pagenum in range(1, n_pages + 1)]
 
     fetch_counter = FetchCounter(n_pages, args["quiet"])
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:63.0) Gecko/20100101 Firefox/63.0",
-    }
     s = requests.Session()
     retries = Retry(
         total=10,
@@ -222,6 +235,7 @@ def main():
     info = {
         "thread": args["thread"],
         "qfc": args["thread"].split("?")[-1].replace(",", "-"),
+        "title": thread_title,
         "pagecount": n_pages,
         "postcount": len(threadposts),
         "posts": threadposts,
